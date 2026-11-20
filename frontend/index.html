@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DriveEase - Premium Vehicle Rental Platform</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Leaflet CSS for Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- AUTH / LANDING HERO SECTION (2 SLIDES: USER vs OWNER) -->
+  <section id="auth-hero-section" class="auth-hero-section">
+    <div class="auth-backdrop"></div>
+    <div class="auth-container">
+
+      <div class="auth-header">
+        <div class="brand-logo">
+          <i class="fa-solid fa-gauge-high logo-icon"></i>
+          <span class="brand-name">Drive<span>Ease</span></span>
+        </div>
+        <p class="brand-tagline">Rent Scooters, Bikes & Cars in Top Cities across India</p>
+      </div>
+
+      <div class="auth-card">
+        <!-- Slide Switcher Tabs -->
+        <div class="auth-tabs">
+          <button id="tab-user" class="tab-btn active" onclick="switchAuthSlide('user')">
+            <i class="fa-solid fa-user-tag"></i> User / Renter
+          </button>
+          <button id="tab-owner" class="tab-btn" onclick="switchAuthSlide('owner')">
+            <i class="fa-solid fa-store"></i> Vehicle Rental Owner
+          </button>
+          <div class="tab-indicator" id="tab-indicator"></div>
+        </div>
+
+        <!-- Slides Wrapper -->
+        <div class="slides-wrapper">
+
+          <!-- SLIDE 1: USER / RENTER LOGIN -->
+          <div id="slide-user" class="auth-slide active">
+            <div class="slide-intro">
+              <h3>Customer Login</h3>
+              <p>Find & rent vehicles at nearest rental shops in your city</p>
+            </div>
+            <form id="user-login-form" onsubmit="handleUserLogin(event)">
+              <div class="input-group">
+                <label><i class="fa-solid fa-envelope"></i> Gmail / Email ID</label>
+                <input type="email" id="user-email" placeholder="user@gmail.com" required value="alex.renter@gmail.com">
+              </div>
+
+              <div class="input-group">
+                <label><i class="fa-solid fa-lock"></i> Password</label>
+                <input type="password" id="user-password" placeholder="••••••••" required value="password123">
+              </div>
+
+              <div class="input-group">
+                <label><i class="fa-solid fa-location-dot"></i> Select Your Main City</label>
+                <select id="user-city-select" class="styled-select" required>
+                  <option value="Goa" selected>Goa</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Pondicherry">Pondicherry</option>
+                  <option value="Bengaluru">Bengaluru</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <span>Explore Vehicles in City</span> <i class="fa-solid fa-arrow-right"></i>
+              </button>
+            </form>
+          </div>
+
+          <!-- SLIDE 2: VEHICLE RENTAL OWNER LOGIN -->
+          <div id="slide-owner" class="auth-slide">
+            <div class="slide-intro">
+              <h3>Rental Owner Login</h3>
+              <p>Manage fleet, adjust daily prices & handle rental orders</p>
+            </div>
+            <!-- <form id="owner-login-form" onsubmit="handleOwnerLogin(event)"> -->
+              <div class="input-group">
+                <label><i class="fa-solid fa-envelope"></i> Owner Gmail / Email ID</label>
+                <input type="email" id="owner-email" placeholder="owner@rentals.com" required value="royal.rentals@gmail.com">
+              </div>
+
+              <div class="input-group">
+                <label><i class="fa-solid fa-lock"></i> Password</label>
+                <input type="password" id="owner-password" placeholder="••••••••" required value="ownerpass123">
+              </div>
+
+              <div class="input-group">
+                <label><i class="fa-solid fa-city"></i> Main Operating City</label>
+                <select id="owner-city-select" class="styled-select" required>
+                  <option value="Goa" selected>Goa</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Mumbai">Mumbai</option>
+                  <option value="Pondicherry">Pondicherry</option>
+                  <option value="Bengaluru">Bengaluru</option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-accent btn-block btn-lg">
+                <span>Open Owner Dashboard</span> <i class="fa-solid fa-chart-line"></i>
+              </button>
+            </form>
+          </div>
+
+        </div> <!-- /.slides-wrapper -->
+
+        <!-- Quick Demo Login Helpers -->
+        <div class="demo-helpers">
+          <span>Quick Demo:</span>
+          <button type="button" class="chip-btn" onclick="quickLogin('user')"><i class="fa-solid fa-user"></i> Demo Customer (Goa)</button>
+          <button type="button" class="chip-btn" onclick="quickLogin('owner')"><i class="fa-solid fa-shop"></i> Demo Owner (Goa)</button>
+        </div>
+
+      </div> <!-- /.auth-card -->
+    </div>
+  </section>
+
+  <!-- MAIN APP CONTAINER (HIDDEN UNTIL LOGIN) -->
+  <div id="main-app" class="main-app hidden">
+
+    <!-- NAVBAR -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand-logo" onclick="resetToHome()">
+          <i class="fa-solid fa-gauge-high logo-icon"></i>
+          <span class="brand-name">Drive<span>Ease</span></span>
+        </div>
+
+        <div class="header-center">
+          <div class="city-badge">
+            <i class="fa-solid fa-location-dot"></i>
+            <span>Current City:</span>
+            <select id="header-city-select" onchange="changeCity(this.value)">
+              <option value="Goa">Goa</option>
+              <option value="Delhi">Delhi</option>
+              <option value="Mumbai">Mumbai</option>
+              <option value="Pondicherry">Pondicherry</option>
+              <option value="Bengaluru">Bengaluru</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <!-- Role Switcher & Profile -->
+          <div id="role-badge" class="role-badge user-mode">
+            <i class="fa-solid fa-user"></i> <span id="user-role-label">Customer</span>
+          </div>
+
+          <button id="my-bookings-btn" class="btn btn-outline btn-sm" onclick="openMyBookingsModal()">
+            <i class="fa-solid fa-calendar-check"></i> My Bookings <span id="bookings-count-badge" class="badge">0</span>
+          </button>
+
+          <button class="btn btn-icon" title="Switch User / Owner" onclick="toggleRoleSwitch()">
+            <i class="fa-solid fa-right-left"></i>
+          </button>
+
+          <button class="btn btn-icon btn-danger" title="Logout" onclick="logout()">
+            <i class="fa-solid fa-power-off"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CUSTOMER VIEW -->
+    <main id="customer-view" class="view-section">
+      <div class="container">
+
+        <!-- SEARCH & FILTER BAR -->
+        <section class="filter-section card">
+          <div class="filter-header">
+            <h3><i class="fa-solid fa-sliders"></i> Find Your Ride</h3>
+            <span class="results-count" id="results-count">Showing 0 vehicles</span>
+          </div>
+
+          <div class="filter-grid">
+            
+            <!-- Search Bar -->
+            <div class="filter-box search-box">
+              <label><i class="fa-solid fa-magnifying-glass"></i> Search</label>
+              <input type="text" id="search-input" placeholder="Search by name, bike, car, or shop..." oninput="applyFilters()">
+            </div>
+
+            <!-- Vehicle Type Filter (2-Wheeler vs 4-Wheeler) -->
+            <div class="filter-box">
+              <label><i class="fa-solid fa-layer-group"></i> Vehicle Category</label>
+              <div class="btn-group" id="category-btn-group">
+                <button class="btn-filter active" data-value="all" onclick="setCategoryFilter('all')">All</button>
+                <button class="btn-filter" data-value="2w" onclick="setCategoryFilter('2w')"><i class="fa-solid fa-motorcycle"></i> 2-Wheeler</button>
+                <button class="btn-filter" data-value="4w" onclick="setCategoryFilter('4w')"><i class="fa-solid fa-car"></i> 4-Wheeler</button>
+              </div>
+            </div>
+
+            <!-- Sub-Category Filter (Scooty/Gear Bike vs 4 Seat/6-7 Seat) -->
+            <div class="filter-box">
+              <label><i class="fa-solid fa-filter"></i> Sub Category Options</label>
+              <select id="subcategory-select" class="styled-select" onchange="applyFilters()">
+                <option value="all">All Sub-Categories</option>
+              </select>
+            </div>
+
+            <!-- Price Adjustment Filter -->
+            <div class="filter-box price-filter-box">
+              <div class="price-label-row">
+                <label><i class="fa-solid fa-indian-rupee-sign"></i> Max Daily Price</label>
+                <span class="price-value" id="price-limit-val">₹6000 / day</span>
+              </div>
+              <input type="range" id="price-range" min="300" max="6000" step="100" value="6000" oninput="updatePriceSlider(this.value)">
+              <div class="range-labels">
+                <span>₹300</span>
+                <span>₹6,000+</span>
+              </div>
+            </div>
+
+          </div> <!-- /.filter-grid -->
+        </section>
+
+        <!-- VEHICLE CATALOG GRID -->
+        <section class="catalog-section">
+          <div id="vehicle-grid" class="vehicle-grid">
+            <!-- Rendered dynamically by app.js -->
+          </div>
+          <div id="no-results" class="no-results hidden">
+            <i class="fa-solid fa-car-burst"></i>
+            <h3>No vehicles match your selected filters</h3>
+            <p>Try adjusting your search query, price limit, or category selection.</p>
+            <button class="btn btn-primary" onclick="resetFilters()">Reset All Filters</button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- OWNER VIEW -->
+    <main id="owner-view" class="view-section hidden">
+      <div class="container">
+
+        <!-- OWNER STATS DASHBOARD -->
+        <section class="owner-dashboard-grid">
+          <div class="stat-card">
+            <div class="stat-icon icon-blue"><i class="fa-solid fa-car-side"></i></div>
+            <div class="stat-data">
+              <h4 id="stat-total-vehicles">0</h4>
+              <p>Total Fleet Vehicles</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="stat-data">
+              <h4 id="stat-available-vehicles">0</h4>
+              <p>Available for Rent</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon icon-orange"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <div class="stat-data">
+              <h4 id="stat-active-orders">0</h4>
+              <p>Active Orders Queue</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon icon-purple"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+            <div class="stat-data">
+              <h4 id="stat-total-revenue">₹0</h4>
+              <p>Estimated Revenue</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- OWNER ACTION BAR & TABS -->
+        <section class="owner-header-bar">
+          <div class="owner-tabs">
+            <button id="owner-tab-fleet" class="tab-btn active" onclick="switchOwnerSubTab('fleet')">
+              <i class="fa-solid fa-list-check"></i> Fleet & Price Management
+            </button>
+            <button id="owner-tab-orders" class="tab-btn" onclick="switchOwnerSubTab('orders')">
+              <i class="fa-solid fa-box-archive"></i> Customer Bookings Queue <span id="owner-orders-badge" class="badge badge-warning">0</span>
+            </button>
+          </div>
+
+          <button class="btn btn-accent btn-md" onclick="openAddVehicleModal()">
+            <i class="fa-solid fa-plus"></i> Add New Vehicle
+          </button>
+        </section>
+
+        <!-- OWNER SECTION 1: FLEET & REALTIME PRICE EDITOR -->
+        <section id="owner-fleet-section" class="owner-content-panel">
+          <div class="card table-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-sliders"></i> Inventory & Live Price Management</h3>
+              <p>Update daily rental rates in real-time or modify vehicle availability</p>
+            </div>
+
+            <div class="table-responsive">
+              <table class="styled-table">
+                <thead>
+                  <tr>
+                    <th>Vehicle Details</th>
+                    <th>Type & Category</th>
+                    <th>Rental Shop</th>
+                    <th>Daily Rate (₹)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="owner-inventory-table-body">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- OWNER SECTION 2: BOOKING QUEUE & 30-MIN AUTO-CANCEL -->
+        <section id="owner-orders-section" class="owner-content-panel hidden">
+          <div class="card">
+            <div class="card-header flex-header">
+              <div>
+                <h3><i class="fa-solid fa-stopwatch"></i> Incoming Customer Orders & Pickup Tracking</h3>
+                <p>Track customer arrival time. Owners can cancel orders if customer fails to arrive within 30 minutes.</p>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="triggerTestTimerFastForward()">
+                <i class="fa-solid fa-bolt"></i> Sim 30-Min Fast Forward (Testing)
+              </button>
+            </div>
+
+            <div id="owner-orders-list" class="orders-list-grid">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div> <!-- /#main-app -->
+
+
+  <!-- MODAL 1: BOOKING & KYC VERIFICATION + LEAFLET MAP -->
+  <div id="booking-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-shield-halved"></i> Vehicle Booking & Verification</h3>
+        <button class="close-btn" onclick="closeBookingModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Summary Banner -->
+        <div class="selected-vehicle-banner" id="booking-vehicle-banner">
+          <!-- Populated dynamically -->
+        </div>
+
+        <form id="booking-form" onsubmit="handleConfirmBooking(event)">
+
+          <!-- Step 1: Customer Details & Identity Verification -->
+          <div class="form-section-title">
+            <span class="step-num">1</span>
+            <h4>Customer Identity & KYC Verification</h4>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="input-group">
+              <label><i class="fa-solid fa-user"></i> Full Name (as on DL/Aadhar)</label>
+              <input type="text" id="kyc-name" placeholder="John Doe" required>
+            </div>
+
+            <div class="input-group">
+              <label><i class="fa-solid fa-phone"></i> Mobile Phone Number</label>
+              <input type="tel" id="kyc-phone" placeholder="9876543210" pattern="[0-9]{10}" title="Enter valid 10-digit mobile number" required>
+            </div>
+
+            <div class="input-group">
+              <label><i class="fa-solid fa-id-card"></i> Driving License (DL) Number</label>
+              <input type="text" id="kyc-dl" placeholder="GA0320210001234" required>
+              <small class="field-hint">e.g. GA0320210001234</small>
+            </div>
+
+            <div class="input-group">
+              <label><i class="fa-solid fa-fingerprint"></i> Aadhar Number (Verification)</label>
+              <input type="text" id="kyc-aadhar" placeholder="1234 5678 9012" pattern="[0-9\s]{12,14}" title="12-digit Aadhar Number" required>
+              <small class="field-hint">12-digit UIDAI number</small>
+            </div>
+          </div>
+
+          <!-- Step 2: Pickup Location & Map Selection -->
+          <div class="form-section-title mt-4">
+            <span class="step-num">2</span>
+            <h4>Select Nearest Rental Shop Location in <span id="map-city-title">City</span></h4>
+          </div>
+
+          <p class="map-instruction">
+            <i class="fa-solid fa-location-crosshairs"></i> Select your preferred shop on the interactive map below or pick from nearest locations list:
+          </p>
+
+          <div class="map-layout">
+            <div class="map-wrapper">
+              <div id="booking-map" class="booking-map"></div>
+            </div>
+
+            <div class="shops-list-sidebar" id="shops-list-sidebar">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+
+          <input type="hidden" id="selected-shop-id" required>
+
+          <!-- Step 3: Date & Terms -->
+          <div class="form-section-title mt-4">
+            <span class="step-num">3</span>
+            <h4>Pickup Window & Arrival Policy</h4>
+          </div>
+
+          <div class="policy-callout warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+              <strong>Important Pickup Rule:</strong>
+              <p>You must arrive at the selected rental shop within <strong>30 minutes</strong> of placing your booking. If you do not report within 30 minutes, the rental owner has the right to cancel your reservation to prevent shop holding loss.</p>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeBookingModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fa-solid fa-circle-check"></i> Confirm Booking & Secure Vehicle
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL 2: ADD VEHICLE (FOR OWNERS) -->
+  <div id="add-vehicle-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-car-tunnel"></i> Add New Vehicle to Fleet</h3>
+        <button class="close-btn" onclick="closeAddVehicleModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="add-vehicle-form" onsubmit="handleAddVehicleSubmit(event)">
+
+          <div class="input-group">
+            <label>Vehicle Brand & Model Name</label>
+            <input type="text" id="add-veh-name" placeholder="e.g. Royal Enfield Hunter 350" required>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="input-group">
+              <label>Vehicle Category</label>
+              <select id="add-veh-category" class="styled-select" onchange="updateAddFormSubcategories()" required>
+                <option value="2w">2-Wheeler</option>
+                <option value="4w">4-Wheeler</option>
+              </select>
+            </div>
+
+            <div class="input-group">
+              <label>Sub Category</label>
+              <select id="add-veh-subcategory" class="styled-select" required>
+                <option value="Scooty">Scooty (Scooter)</option>
+                <option value="Gear Bike">Gear Bike</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="input-group">
+              <label>Daily Rental Rate (₹/day)</label>
+              <input type="number" id="add-veh-price" placeholder="700" min="100" max="20000" required>
+            </div>
+
+            <div class="input-group">
+              <label>Capacity / Specs</label>
+              <input type="text" id="add-veh-specs" placeholder="e.g. 350cc | Petrol | Manual" required>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Operating Rental Shop Location</label>
+            <select id="add-veh-shop" class="styled-select" required>
+              <!-- Dynamic based on owner city -->
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label>Vehicle Image URL</label>
+            <input type="url" id="add-veh-image" placeholder="https://images.unsplash.com/photo-..." required>
+            <small class="field-hint">Provide direct photo link or use preset photo link</small>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline" onclick="closeAddVehicleModal()">Cancel</button>
+            <button type="submit" class="btn btn-accent btn-md">
+              <i class="fa-solid fa-plus"></i> Register Vehicle
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL 3: MY BOOKINGS (CUSTOMER VIEW) -->
+  <div id="my-bookings-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-lg">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-receipt"></i> Active & Past Bookings</h3>
+        <button class="close-btn" onclick="closeMyBookingsModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div id="my-bookings-list" class="my-bookings-grid">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Leaflet JS for Maps -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+
+</body>
+</html>
